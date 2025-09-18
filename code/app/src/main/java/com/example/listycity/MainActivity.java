@@ -13,68 +13,49 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        AddCityFragment.AddCityDialogListener {
+    private ArrayList<City> dataList;
+    private ListView cityList;
+    private CityArrayAdapter cityAdapter;
+    @Override
+    public void addCity(City city) {
+        cityAdapter.add(city);
+        cityAdapter.notifyDataSetChanged();
+    }
 
-    ListView cityList;
-    ArrayAdapter<String> cityAdapter;
-    ArrayList<String> dataList;
-    String currentSelectedCity = "";
+    @Override
+    public void editCity(City city, int position) {
+        dataList.set(position, city);
+        cityAdapter.notifyDataSetChanged();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        // Link cities to Listview
-        cityList = findViewById(R.id.city_list);
-        String []cities =  {"Edmonton", "Vancouver", "Montreal", "Berlin", "Toronto", "Tokyo", "Las Vegas", "Boston", "Saskatoon"};
-
+        String[] cities = { "Edmonton", "Vancouver", "Toronto" };
+        String[] provinces = { "AB", "BC", "ON" };
         dataList = new ArrayList<>();
-        dataList.addAll(Arrays.asList(cities));
-
-        cityAdapter = new ArrayAdapter<>(this, R.layout.content, dataList);
+        for (int i = 0; i < cities.length; i++) {
+            dataList.add(new City(cities[i], provinces[i]));
+        }
+        cityList = findViewById(R.id.city_list);
+        cityAdapter = new CityArrayAdapter(this, dataList);
         cityList.setAdapter(cityAdapter);
-
-
-        // Create City List item click listener
-        cityList.setOnItemClickListener(
-                (parent, view, position, id) -> {
-                    // Fetch clicked city
-                    currentSelectedCity = cityAdapter.getItem(position);
-
-                    // Create edit field
-                    EditText cityEdit = new EditText(MainActivity.this);
-                    cityEdit.setText(currentSelectedCity);
-                    cityEdit.setSelection(currentSelectedCity.length());
-
-                    // Create Alert Dialog
-                    AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
-                    dialog.setTitle("Add/edit city");
-                    dialog.setView(cityEdit);
-
-                    // Create confirmation/cancellation buttons
-                    dialog.setPositiveButton("Confirm",
-                            (dialogTemp, which) ->
-                            {
-                                dataList.set(position, cityEdit.getText().toString().trim());
-                                cityAdapter.notifyDataSetChanged();
-                            });
-
-                    dialog.setNegativeButton("Cancel",
-                            (dialog1, which) ->
-                                    dialog1.dismiss());
-                    dialog.show();
-                });
-
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+        FloatingActionButton fab = findViewById(R.id.button_add_city);
+        fab.setOnClickListener(v -> {
+            new AddCityFragment().show(getSupportFragmentManager(), "Add City");
         });
-    }
 
+        cityList.setOnItemClickListener(
+            (parent, view, position, id) -> {
+                new AddCityFragment(dataList.get(position), position).show(getSupportFragmentManager(), "Edit City");
+            });
+    }
 }
